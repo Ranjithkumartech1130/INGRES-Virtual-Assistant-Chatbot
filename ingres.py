@@ -54,6 +54,7 @@ def handle_prompt(prompt: str):
     # Display assistant response
     with st.chat_message("assistant", avatar="🤖"):
         with st.spinner("Thinking..."):
+            bot_reply = None
             try:
                 # Prepare messages for Groq API (System Prompt + History)
                 api_messages = [{"role": "system", "content": SYSTEM_PROMPT}] + st.session_state.messages
@@ -77,8 +78,9 @@ def handle_prompt(prompt: str):
                 bot_reply = "Sorry, I ran into a problem. Please try again."
                 st.markdown(bot_reply)
 
-    # Add assistant response to session state
-    st.session_state.messages.append({"role": "assistant", "content": bot_reply})
+    # Add assistant response to session state only if we have a reply
+    if bot_reply:
+        st.session_state.messages.append({"role": "assistant", "content": bot_reply})
 
 def get_voice_input():
     """Captures and transcribes voice input."""
