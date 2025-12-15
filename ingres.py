@@ -22,7 +22,7 @@ try:
     if not api_key:
         raise KeyError("API Key not found")
         
-    client = Groq(api_key=api_key)
+    client = Groq(api_key=api_key.strip())
 except (KeyError, FileNotFoundError):
     st.error(
         "🚨 Groq API key not found. "
