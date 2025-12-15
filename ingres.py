@@ -77,7 +77,10 @@ def handle_prompt(prompt: str):
                 bot_reply = completion.choices[0].message.content
                 st.markdown(bot_reply)
             except AuthenticationError:
-                st.error("🚨 Authentication Error: Invalid API Key. Please check your `GROQ_API_KEY` in Streamlit Secrets. Ensure there are no extra spaces or quotes.", icon="🚨")
+                # SAFE DEBUGGING: Show length and last 4 chars
+                key_len = len(cleaned_key)
+                masked_key = f"...{cleaned_key[-4:]}" if key_len > 4 else "INVALID"
+                st.error(f"🚨 Authentication Error: Groq rejected the key. \n\nDebug Info:\n- Key Length: {key_len}\n- Ends with: '{masked_key}'\n\nAction: Go to Groq Console, generate a NEW key, and update Streamlit Secrets.", icon="🚨")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
                 bot_reply = "Sorry, I ran into a problem. Please try again."
