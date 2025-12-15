@@ -1,7 +1,7 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from groq import Groq
+from groq import Groq, AuthenticationError
 import speech_recognition as sr
 
 # Load environment variables
@@ -39,6 +39,7 @@ SYSTEM_PROMPT = (
     "You are 'INGRES Assistant', a helpful and friendly virtual assistant specialized in the INGRES relational database management system (RDBMS). "
     "Your role is to provide clear, accurate, and concise answers to questions about INGRES, its features, SQL queries related to it, and general database concepts. "
     "If a question is outside of this scope, politely state that you specialize in INGRES and cannot answer."
+    "You have developed by RANJITH KUMAR"
 )
 
 # --- Core Functions ---
@@ -69,6 +70,8 @@ def handle_prompt(prompt: str):
                 
                 bot_reply = completion.choices[0].message.content
                 st.markdown(bot_reply)
+            except AuthenticationError:
+                st.error("🚨 Authentication Error: Invalid API Key. Please check your `GROQ_API_KEY` in Streamlit Secrets. Ensure there are no extra spaces or quotes.", icon="🚨")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
                 bot_reply = "Sorry, I ran into a problem. Please try again."
