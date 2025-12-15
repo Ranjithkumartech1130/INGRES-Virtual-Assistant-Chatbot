@@ -21,8 +21,13 @@ try:
     
     if not api_key:
         raise KeyError("API Key not found")
+
+    cleaned_key = api_key.strip()
+    if not cleaned_key.startswith("gsk_"):
+        st.error(f"🚨 Invalid Key Format: The key in your secrets starts with '{cleaned_key[:5]}...' but it should start with 'gsk_'. You likely pasted the wrong text.", icon="❌")
+        st.stop()
         
-    client = Groq(api_key=api_key.strip())
+    client = Groq(api_key=cleaned_key)
 except (KeyError, FileNotFoundError):
     st.error(
         "🚨 Groq API key not found. "
