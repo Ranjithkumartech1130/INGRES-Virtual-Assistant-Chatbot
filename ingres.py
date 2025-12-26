@@ -221,21 +221,28 @@ def handle_prompt(prompt: str, sys_prompt: str):
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
 def get_voice_input():
-    """Captures audio from microphone."""
+    """Captures audio from microphone. Gracefully handles absence of microphone hardware."""
     r = sr.Recognizer()
-    with sr.Microphone() as source:
-        st.toast("Listening...", icon="🎤")
-        try:
-            audio = r.listen(source, timeout=5, phrase_time_limit=10)
-            st.toast("Processing audio...", icon="⚙️")
-            text = r.recognize_google(audio)
-            return text
-        except sr.UnknownValueError:
-            st.warning("Could not understand audio.")
-        except sr.RequestError as e:
-            st.error(f"Could not request results; {e}")
-        except sr.WaitTimeoutError:
-            st.warning("No speech detected.")
+    try:
+        # Check for microphone availability before entering context
+        # On cloud servers, this usually raises OSError immediately
+        with sr.Microphone() as source:
+            st.toast("Listening...", icon="🎤")
+            try:
+                audio = r.listen(source, timeout=5, phrase_time_limit=10)
+                st.toast("Processing audio...", icon="⚙️")
+                text = r.recognize_google(audio)
+                return text
+            except sr.UnknownValueError:
+                st.warning("Could not understand audio.")
+            except sr.RequestError as e:
+                st.error(f"Could not request results; {e}")
+            except sr.WaitTimeoutError:
+                st.warning("No speech detected.")
+    except OSError:
+        st.error("Microphone not detected. Voice input unavailable on this server.", icon="🚫")
+    except Exception as e:
+        st.error(f"Voice Error: {e}", icon="⚠️")
     return None
 
 # --- Main Interface ---
@@ -298,6 +305,7 @@ with st.sidebar:
         pass
 
     st.markdown("### 🎙️ Voice Interaction")
+    # Voice Button Logic
     if st.button("🎤 Start Recording", use_container_width=True):
         voice_text = get_voice_input()
         if voice_text:
