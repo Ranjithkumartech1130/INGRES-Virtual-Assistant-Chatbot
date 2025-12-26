@@ -11,7 +11,8 @@ load_dotenv()
 
 # API Configuration - Default System Key
 DEFAULT_API_KEY = "AIzaSyAA1d2mAUUu-RQA0W8p3QY7PO0poKmYns0"
-MODEL_NAME = "gemini-2.5-flash" 
+# Default fallback model
+DEFAULT_MODEL = "gemini-2.5-flash" 
 
 # --- Page Configuration ---
 st.set_page_config(
@@ -117,6 +118,13 @@ st.markdown("""
         border: 1px solid #334155;
     }
 
+    /* Selectbox */
+    div[data-baseweb="select"] > div {
+        background-color: #1e293b;
+        color: white;
+        border: 1px solid #334155;
+    }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar {
         width: 8px;
@@ -157,23 +165,23 @@ SYSTEM_PROMPT_GENERAL = (
 )
 
 @st.cache_resource
-def get_model(sys_prompt):
+def get_model(sys_prompt, model_name):
     generation_config = {
         "temperature": 0.7,
         "top_p": 0.95,
         "top_k": 64,
         "max_output_tokens": 8192,
     }
-    # Create model with dynamic system instruction
+    # Create model with dynamic system instruction and selected model
     model = genai.GenerativeModel(
-        model_name=MODEL_NAME,
+        model_name=model_name,
         generation_config=generation_config,
         system_instruction=sys_prompt
     )
     return model
 
-def handle_prompt(prompt: str, sys_prompt: str):
-    """Processes the user prompt with the specific system context."""
+def handle_prompt(prompt: str, sys_prompt: str, model_name: str):
+    """Processes the user prompt with the specific system context and model."""
     # Add user message
     st.session_state.messages.append({"role": "user", "content": prompt})
     
@@ -184,9 +192,9 @@ def handle_prompt(prompt: str, sys_prompt: str):
     with st.chat_message("assistant", avatar="🤖"):
         message_placeholder = st.empty()
         full_response = ""
-        with st.spinner("AI is thinking..."):
+        with st.spinner(f"{model_name} is thinking..."):
             try:
-                model = get_model(sys_prompt)
+                model = get_model(sys_prompt, model_name)
                 
                 # History Mapping
                 history = []
@@ -208,10 +216,14 @@ def handle_prompt(prompt: str, sys_prompt: str):
                 message_placeholder.markdown(full_response)
                 
             except Exception as e:
-                if "404" in str(e) and "models/" in str(e):
-                     st.error(f"Model Error: '{MODEL_NAME}' not found. Please verify the model version.", icon="❌")
+                err_msg = str(e)
+                if "404" in err_msg and "models/" in err_msg:
+                     st.error(f"Model Error: '{model_name}' not found. Please verify the model version or switch models.", icon="❌")
                      full_response = "I could not access the specified AI model."
-                elif "400" in str(e) or "API key" in str(e) or "403" in str(e):
+                elif "429" in err_msg:
+                     st.warning(f"⏳ Rate Limit Exceeded for {model_name}. Please switch to a different model in the sidebar.", icon="⚠️")
+                     full_response = "Rate limit hit. Please try a different model from the sidebar settings."
+                elif "400" in err_msg or "API key" in err_msg or "403" in err_msg:
                      st.error(f"Authentication Error: Please check your API Key.", icon="🔒")
                      full_response = "I could not authenticate. Please check the API Key settings."
                 else:
@@ -268,10 +280,19 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # 2. Mode Selector
-    st.markdown("### 🧠 AI Personality")
+    # 2. Model & Personality
+    st.markdown("### 🧠 AI Settings")
+    
+    # Model Selector
+    selected_model = st.selectbox(
+        "Choose AI Model:",
+        ["gemini-2.5-flash", "gemini-1.5-flash", "gemini-2.0-flash-exp", "gemini-1.5-pro"],
+        index=0,
+        help="Switch models if you hit rate limits (Error 429)."
+    )
+    
     mode_selection = st.radio(
-        "Choose Mode:",
+        "Choose Personality:",
         ["INGRES Expert", "General Assistant"],
         index=0,
         captions=["Specialized DB Admin", "Helpful General AI"]
@@ -300,18 +321,9 @@ with st.sidebar:
     st.markdown("### 🎙️ Voice Interaction")
     
     # BROWSER-BASED AUDIO RECORDER
-    # This renders a microphone button in the browser
     audio = audiorecorder("🎤 Click to Speak", "🔴 Recording...")
     
     if len(audio) > 0:
-        # Check if we processed this audio already to avoid loop?
-        # Streamlit re-runs script on interaction. 
-        # We need to make sure we don't re-submit old audio.
-        # However, audiorecorder clears on reset usually, but let's be safe.
-        # Best way is checking prompt input or just processing.
-        # Actually audiorecorder output persists until cleared.
-        # Let's rely on user flow.
-        
         st.audio(audio.export().read())  # Play back for confirmation
         
         # Audio is an AudioSegment from pydub. Export to wav bytes.
@@ -321,11 +333,8 @@ with st.sidebar:
         
         if transcribed_text:
             st.success(f"Heard: {transcribed_text}")
-            # We add a button to confirm sending, or auto-send?
-            # Auto-send is smoother but might loop if not careful.
-            # Let's add a "Send" button that appears when text is ready
             if st.button("📤 Send Voice Query"):
-               handle_prompt(transcribed_text, current_sys_prompt)
+               handle_prompt(transcribed_text, current_sys_prompt, selected_model)
                st.rerun()
 
     st.markdown("---")
@@ -333,7 +342,7 @@ with st.sidebar:
         f"""
         <div style='background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155;'>
             <div style='font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;'>Active Model</div>
-            <div style='font-size: 0.9rem; font-weight: 600; color: #38bdf8;'>{MODEL_NAME}</div>
+            <div style='font-size: 0.9rem; font-weight: 600; color: #38bdf8;'>{selected_model}</div>
         </div>
         """, 
         unsafe_allow_html=True
@@ -353,4 +362,4 @@ for msg in st.session_state.messages:
 
 # Chat Input
 if prompt := st.chat_input("Type your message here..."):
-    handle_prompt(prompt, current_sys_prompt)
+    handle_prompt(prompt, current_sys_prompt, selected_model)
