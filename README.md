@@ -1,12 +1,20 @@
-# INGRES Chatbot
+# INGRES Virtual Assistant
 
-This is a chatbot powered by Google's Gemini model, specialized in answering questions about the INGRES database system.
+This is a smart chatbot powered by Google's **Gemini 1.5 Flash** model, specialized in answering questions about the INGRES relational database management system.
 
-## Project Structure
+## Features
 
-- `ingres.py`: Main application file (Streamlit app).
-- `.env`: Environment variables (API keys).
-- `requirements.txt`: Python dependencies.
+-   **Specialized Knowledge**: Expert in INGRES SQL, architecture, and optimization.
+-   **Voice Input**: Speak your queries directly to the assistant.
+-   **Modern UI**: Sleek, dark-themed interface built with Streamlit.
+-   **Chat History**: Keeps track of your conversation.
+
+## Tech Stack
+
+-   **Python 3.8+**
+-   **Streamlit**: For the web interface.
+-   **Google Gemini API**: For LLM capabilities.
+-   **SpeechRecognition**: For voice-to-text functionality.
 
 ## Setup & Run
 
@@ -20,6 +28,6 @@ This is a chatbot powered by Google's Gemini model, specialized in answering que
     streamlit run ingres.py
     ```
 
-## Notes
+## Configuration
 
-- Ensure you have your Google API key configured in `.env` as `GOOGLE_API_KEY`.
+The API Key is currently configured directly in the application for ease of use. If you wish to use environment variables, update the `.env` file and uncomment the loading logic in `ingres.py`.
