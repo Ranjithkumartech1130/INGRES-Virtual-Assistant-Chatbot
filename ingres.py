@@ -3,6 +3,8 @@ import os
 import google.generativeai as genai
 import speech_recognition as sr
 from dotenv import load_dotenv
+from audiorecorder import audiorecorder
+import io
 
 # --- Configuration ---
 load_dotenv()
@@ -220,30 +222,21 @@ def handle_prompt(prompt: str, sys_prompt: str):
     
     st.session_state.messages.append({"role": "assistant", "content": full_response})
 
-def get_voice_input():
-    """Captures audio from microphone. Gracefully handles absence of microphone hardware."""
+def transcribe_audio_file(audio_bytes):
+    """Transcribes audio using Google Speech Recognition."""
     r = sr.Recognizer()
     try:
-        # Check for microphone availability before entering context
-        # On cloud servers, this usually raises OSError immediately
-        with sr.Microphone() as source:
-            st.toast("Listening...", icon="🎤")
-            try:
-                audio = r.listen(source, timeout=5, phrase_time_limit=10)
-                st.toast("Processing audio...", icon="⚙️")
-                text = r.recognize_google(audio)
-                return text
-            except sr.UnknownValueError:
-                st.warning("Could not understand audio.")
-            except sr.RequestError as e:
-                st.error(f"Could not request results; {e}")
-            except sr.WaitTimeoutError:
-                st.warning("No speech detected.")
-    except OSError:
-        st.error("Microphone not detected. Voice input unavailable on this server.", icon="🚫")
+        # Convert bytes to a file-like object that recognizer can read
+        # Note: audiorecorder returns wav bytes usually
+        audio_file = io.BytesIO(audio_bytes)
+        
+        with sr.AudioFile(audio_file) as source:
+            audio_data = r.record(source)
+            text = r.recognize_google(audio_data)
+            return text
     except Exception as e:
-        st.error(f"Voice Error: {e}", icon="⚠️")
-    return None
+        st.error(f"Transcription Error: {e}")
+        return None
 
 # --- Main Interface ---
 
@@ -305,13 +298,35 @@ with st.sidebar:
         pass
 
     st.markdown("### 🎙️ Voice Interaction")
-    # Voice Button Logic
-    if st.button("🎤 Start Recording", use_container_width=True):
-        voice_text = get_voice_input()
-        if voice_text:
-            st.success(f"Heard: {voice_text}")
-            handle_prompt(voice_text, current_sys_prompt)
-            st.rerun()
+    
+    # BROWSER-BASED AUDIO RECORDER
+    # This renders a microphone button in the browser
+    audio = audiorecorder("🎤 Click to Speak", "🔴 Recording...")
+    
+    if len(audio) > 0:
+        # Check if we processed this audio already to avoid loop?
+        # Streamlit re-runs script on interaction. 
+        # We need to make sure we don't re-submit old audio.
+        # However, audiorecorder clears on reset usually, but let's be safe.
+        # Best way is checking prompt input or just processing.
+        # Actually audiorecorder output persists until cleared.
+        # Let's rely on user flow.
+        
+        st.audio(audio.export().read())  # Play back for confirmation
+        
+        # Audio is an AudioSegment from pydub. Export to wav bytes.
+        wav_bytes = audio.export(format="wav").read()
+        
+        transcribed_text = transcribe_audio_file(wav_bytes)
+        
+        if transcribed_text:
+            st.success(f"Heard: {transcribed_text}")
+            # We add a button to confirm sending, or auto-send?
+            # Auto-send is smoother but might loop if not careful.
+            # Let's add a "Send" button that appears when text is ready
+            if st.button("📤 Send Voice Query"):
+               handle_prompt(transcribed_text, current_sys_prompt)
+               st.rerun()
 
     st.markdown("---")
     st.markdown(

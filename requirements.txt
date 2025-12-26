@@ -3,3 +3,5 @@ google-generativeai
 python-dotenv
 SpeechRecognition
 pyaudio
+streamlit-audiorecorder
+pydub
