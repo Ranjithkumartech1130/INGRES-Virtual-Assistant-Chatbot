@@ -10,7 +10,7 @@ import io
 load_dotenv()
 
 # API Configuration - Default System Key
-DEFAULT_API_KEY = "AIzaSyBeaXUY-BUr7zrAn0o8Fw26klxtNW8gIAQ"
+DEFAULT_API_KEY = "AIzaSyDYQdKUHAtXxby2rOv22KPce2Ef8Put63E"
 # Default fallback model
 DEFAULT_MODEL = "gemini-2.5-flash" 
 
