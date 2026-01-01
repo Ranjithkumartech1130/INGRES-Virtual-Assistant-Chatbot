@@ -22,126 +22,175 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+import base64
+
+# --- Helper Functions for UI ---
+def get_base64_of_bin_file(bin_file):
+    with open(bin_file, 'rb') as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+def get_img_with_href(local_img_path):
+    img_format = local_img_path.split(".")[-1]
+    binary_data = get_base64_of_bin_file(local_img_path)
+    return f"data:image/{img_format};base64,{binary_data}"
+
+# Load Assets
+try:
+    bg_img = get_img_with_href("assets/background.png")
+    logo_img = get_img_with_href("assets/logo.png")
+except:
+    bg_img = ""
+    logo_img = ""
+
 # --- Custom Premium UI ---
-st.markdown("""
+st.markdown(f"""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
     /* Main Background */
-    .stApp {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #111827 100%);
+    .stApp {{
+        background: linear-gradient(rgba(15, 23, 42, 0.85), rgba(15, 23, 42, 0.85)), url("{bg_img}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        font-family: 'Space Grotesk', sans-serif;
         color: #e2e8f0;
-    }
+    }}
     
     /* Sidebar */
-    [data-testid="stSidebar"] {
-        background-color: #0b1120;
-        border-right: 1px solid #334155;
-    }
+    [data-testid="stSidebar"] {{
+        background: rgba(11, 17, 32, 0.8);
+        backdrop-filter: blur(20px);
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }}
 
     /* Header Styling */
-    h1 {
-        background: linear-gradient(to right, #60a5fa, #a78bfa);
+    .main-header {{
+        display: flex;
+        align-items: center;
+        gap: 20px;
+        margin-bottom: 2rem;
+        padding: 20px;
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(10px);
+    }}
+    
+    .logo-img {{
+        width: 80px;
+        filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5));
+        animation: pulse 4s infinite ease-in-out;
+    }}
+
+    @keyframes pulse {{
+        0%, 100% {{ transform: scale(1); filter: drop-shadow(0 0 15px rgba(56, 189, 248, 0.5)); }}
+        50% {{ transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(167, 139, 250, 0.7)); }}
+    }}
+
+    h1 {{
+        background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        font-weight: 800;
-        letter-spacing: -0.05em;
-    }
+        font-weight: 700;
+        font-size: 2.5rem !important;
+        margin: 0;
+    }}
     
-    h2, h3 {
-        color: #f8fafc;
-        font-family: 'Inter', sans-serif;
-    }
-
     /* Chat Messages - Glassmorphism */
-    .stChatMessage {
-        background-color: rgba(30, 41, 59, 0.4);
-        border: 1px solid rgba(148, 163, 184, 0.1);
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 10px;
-        backdrop-filter: blur(12px);
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    }
+    .stChatMessage {{
+        background: rgba(30, 41, 59, 0.4) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+        margin-bottom: 15px !important;
+        backdrop-filter: blur(15px) !important;
+        box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5) !important;
+        transition: all 0.3s ease;
+        animation: fadeIn 0.5s ease-out;
+    }}
+
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: translateY(10px); }}
+        to {{ opacity: 1; transform: translateY(0); }}
+    }}
+    
+    .stChatMessage:hover {{
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        transform: scale(1.01);
+    }}
     
     /* User Message Specifics */
-    [data-testid="stChatMessage"][data-testid="user"] {
-        background-color: rgba(59, 130, 246, 0.15);
-        border-color: rgba(59, 130, 246, 0.3);
-    }
+    [data-testid="stChatMessage"][data-testid="user"] {{
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05)) !important;
+        border-left: 4px solid #3b82f6 !important;
+    }}
 
     /* Assistant Message Specifics */
-    [data-testid="stChatMessage"][data-testid="assistant"] {
-        background-color: rgba(16, 185, 129, 0.1);
-        border-color: rgba(16, 185, 129, 0.3);
-    }
+    [data-testid="stChatMessage"][data-testid="assistant"] {{
+        background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.02)) !important;
+        border-left: 4px solid #10b981 !important;
+    }}
 
     /* Input Field */
-    .stChatInputContainer textarea {
-        background-color: #1f2937;
-        color: white;
-        border: 1px solid #374151;
-        border-radius: 10px;
-        transition: border-color 0.2s;
-    }
-    .stChatInputContainer textarea:focus {
-        border-color: #60a5fa !important;
-        box-shadow: 0 0 0 1px #60a5fa !important;
-    }
+    .stChatInputContainer {{
+        padding: 0 1rem !important;
+        background: transparent !important;
+    }}
+
+    .stChatInputContainer textarea {{
+        background: rgba(15, 23, 42, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 15px !important;
+        backdrop-filter: blur(10px) !important;
+        color: white !important;
+    }}
     
-    /* Buttons */
-    .stButton button {
-        background: linear-gradient(90deg, #3b82f6 0%, #6366f1 100%);
-        color: white;
-        font-weight: 600;
-        border: none;
-        border-radius: 8px;
-        padding: 0.6rem 1.2rem;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    .stButton button:hover {
-        opacity: 0.95;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
-    }
-
-    /* Radio Selection Card */
-    div[role="radiogroup"] {
-        background-color: #1e293b;
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #334155;
-    }
-    
-    /* Text Input */
-    .stTextInput input {
-        background-color: #1e293b;
-        color: white;
-        border: 1px solid #334155;
-    }
-
-    /* Selectbox */
-    div[data-baseweb="select"] > div {
-        background-color: #1e293b;
-        color: white;
-        border: 1px solid #334155;
-    }
-
     /* Custom Scrollbar */
-    ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-    }
-    ::-webkit-scrollbar-track {
-        background: #0f172a; 
-    }
-    ::-webkit-scrollbar-thumb {
-        background: #475569; 
-        border-radius: 4px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
-    }
+    ::-webkit-scrollbar {{
+        width: 6px;
+    }}
+    ::-webkit-scrollbar-track {{
+        background: rgba(15, 23, 42, 0.1); 
+    }}
+    ::-webkit-scrollbar-thumb {{
+        background: rgba(96, 165, 250, 0.3); 
+        border-radius: 10px;
+    }}
+    ::-webkit-scrollbar-thumb:hover {{
+        background: rgba(96, 165, 250, 0.5); 
+    }}
+
+    /* Sidebar Improvements */
+    .sidebar-content {{
+        background: rgba(255, 255, 255, 0.02);
+        padding: 15px;
+        border-radius: 15px;
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        margin-bottom: 20px;
+    }}
+
+    /* Button Styling */
+    .stButton > button {{
+        width: 100%;
+        border-radius: 12px !important;
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+        color: white !important;
+        border: none !important;
+        padding: 10px 20px !important;
+        font-weight: 600 !important;
+        transition: all 0.3s ease !important;
+    }}
+
+    .stButton > button:hover {{
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.4) !important;
+        transform: translateY(-2px) !important;
+    }}
+
     </style>
 """, unsafe_allow_html=True)
+
 
 # --- Helper Functions ---
 def get_or_init_session_state(key, default_value):
@@ -258,6 +307,7 @@ with st.sidebar:
     st.title("⚙️ Cortex Controls")
     
     # 1. API Key Configuration
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
     st.markdown("### 🔑 API Access")
     user_api_key = st.text_input(
         "Custom API Key (Optional)", 
@@ -273,6 +323,7 @@ with st.sidebar:
     else:
         active_api_key = DEFAULT_API_KEY
         st.caption("🔒 Using **System Default Key**")
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # Configure GenAI immediately based on current sidebar state
     try:
@@ -280,9 +331,8 @@ with st.sidebar:
     except Exception as e:
         st.error(f"Config Error: {e}")
 
-    st.markdown("---")
-
     # 2. Model & Personality
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
     st.markdown("### 🧠 AI Settings")
     
     # Model Selector
@@ -299,6 +349,7 @@ with st.sidebar:
         index=0,
         captions=["Specialized DB Admin", "Helpful General AI"]
     )
+    st.markdown('</div>', unsafe_allow_html=True)
 
     if mode_selection == "INGRES Expert":
         current_sys_prompt = SYSTEM_PROMPT_INGRES
@@ -320,6 +371,7 @@ with st.sidebar:
     with col2:
         pass
 
+    st.markdown('<div class="sidebar-content">', unsafe_allow_html=True)
     st.markdown("### 🎙️ Voice Interaction")
     
     # BROWSER-BASED AUDIO RECORDER
@@ -335,24 +387,31 @@ with st.sidebar:
         
         if transcribed_text:
             st.success(f"Heard: {transcribed_text}")
-            if st.button("📤 Send Voice Query"):
+            if st.button("📤 Send"):
                handle_prompt(transcribed_text, current_sys_prompt, selected_model)
                st.rerun()
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    st.markdown("---")
     st.markdown(
         f"""
-        <div style='background-color: #0f172a; padding: 12px; border-radius: 8px; border: 1px solid #334155;'>
-            <div style='font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;'>Active Model</div>
-            <div style='font-size: 0.9rem; font-weight: 600; color: #38bdf8;'>{selected_model}</div>
+        <div style='background: rgba(56, 189, 248, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(56, 189, 248, 0.2);'>
+            <div style='font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px;'>Active Engine</div>
+            <div style='font-size: 1rem; font-weight: 700; color: #38bdf8; font-family: "Space Grotesk";'>{selected_model}</div>
         </div>
         """, 
         unsafe_allow_html=True
     )
 
 # --- Main Area Render ---
-st.title(app_title)
-st.caption(app_caption)
+st.markdown(f"""
+    <div class="main-header">
+        <img src="{logo_img}" class="logo-img">
+        <div>
+            <h1>{app_title}</h1>
+            <p style="color: #94a3b8; margin: 0; font-size: 1.1rem;">{app_caption}</p>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 # Initialize history
 get_or_init_session_state("messages", [])
